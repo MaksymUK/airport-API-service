@@ -28,7 +28,7 @@ class Airport(models.Model):
     closest_big_city = models.CharField(max_length=255)
 
     def __str__(self):
-        return self.name
+        return f"{self.name} ({self.closest_big_city})"
 
 
 class Route(models.Model):
@@ -37,7 +37,7 @@ class Route(models.Model):
     distance = models.IntegerField()
 
     def __str__(self):
-        return f"{self.source} - {self.destination}"
+        return f"{self.source} - {self.destination}, {self.distance} km"
 
 
 class Crew(models.Model):
