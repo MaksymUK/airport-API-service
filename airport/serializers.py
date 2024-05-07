@@ -19,9 +19,17 @@ class AirplaneTypeSerializer(serializers.ModelSerializer):
 
 
 class AirplaneSerializer(serializers.ModelSerializer):
+    airplane_type = serializers.StringRelatedField(read_only=True)
+
     class Meta:
         model = Airplane
         fields = ("id", "name", "rows", "seats_in_row", "airplane_type", "capacity")
+
+
+class AirplaneDetailSerializer(AirplaneSerializer):
+    class Meta:
+        model = Airplane
+        fields = ("name", "capacity")
 
 
 class AirportSerializer(serializers.ModelSerializer):
@@ -31,9 +39,18 @@ class AirportSerializer(serializers.ModelSerializer):
 
 
 class RouteSerializer(serializers.ModelSerializer):
+    source = serializers.StringRelatedField(read_only=True)
+    destination = serializers.StringRelatedField(read_only=True)
+
     class Meta:
         model = Route
         fields = ("id", "source", "destination", "distance",)
+
+
+class RouteDetailSerializer(RouteSerializer):
+    class Meta:
+        model = Route
+        fields = ("source", "destination",)
 
 
 class CrewSerializer(serializers.ModelSerializer):
@@ -43,6 +60,10 @@ class CrewSerializer(serializers.ModelSerializer):
 
 
 class FlightSerializer(serializers.ModelSerializer):
+    crew = serializers.StringRelatedField(many=True, read_only=True)
+    route = RouteDetailSerializer(read_only=True)
+    airplane = AirplaneDetailSerializer(read_only=True)
+
     class Meta:
         model = Flight
         fields = ("id", "route", "airplane", "departure_time", "arrival_time", "crew",)
