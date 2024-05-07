@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.db.models import UniqueConstraint
 
 
 class AirplaneType(models.Model):
@@ -76,5 +77,15 @@ class Ticket(models.Model):
     flight = models.ForeignKey(Flight, on_delete=models.CASCADE)
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
 
+    class Meta:
+        constraints = [
+            UniqueConstraint(fields=['seat', 'flight'], name='unique_seat')
+        ]
+
     def __str__(self):
-        return f"{self.flight} - {self.order}"
+        return f"{self.flight} - {self.seat}"
+
+    def clean(self):
+        if self.flight.airplane.capacity < Ticket.objects.filter(flight=self.flight).count():
+            raise ValueError("No available seats")
+        
