@@ -54,7 +54,7 @@ class Flight(models.Model):
     airplane = models.ForeignKey(Airplane, on_delete=models.CASCADE)
     departure_time = models.DateTimeField()
     arrival_time = models.DateTimeField()
-    crew = models.ManyToManyField(Crew)
+    crew = models.ManyToManyField(Crew, related_name='flights')
 
     def __str__(self):
         return f"{self.airplane} - {self.route}"
@@ -75,7 +75,7 @@ class Ticket(models.Model):
     row = models.IntegerField()
     seat = models.IntegerField()
     flight = models.ForeignKey(Flight, on_delete=models.CASCADE)
-    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='tickets')
 
     class Meta:
         constraints = [
@@ -88,4 +88,3 @@ class Ticket(models.Model):
     def clean(self):
         if self.flight.airplane.capacity < Ticket.objects.filter(flight=self.flight).count():
             raise ValueError("No available seats")
-        
