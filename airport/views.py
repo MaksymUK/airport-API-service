@@ -14,10 +14,14 @@ from .models import (
 from .serializers import (
     AirplaneTypeSerializer,
     AirplaneSerializer,
+    AirplaneDetailSerializer,
+    AirplaneListSerializer,
     AirportSerializer,
     RouteSerializer,
     CrewSerializer,
     FlightSerializer,
+    FlightListSerializer,
+    FlightDetailSerializer,
     OrderSerializer,
 )
 
@@ -30,12 +34,24 @@ class AirplaneTypeViewSet(
 
 
 class AirplaneViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    GenericViewSet,
+    viewsets.ModelViewSet
 ):
     queryset = Airplane.objects.all()
-    serializer_class = AirplaneSerializer
+
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return AirplaneDetailSerializer
+        if self.action == 'list':
+            return AirplaneListSerializer
+
+        return AirplaneSerializer
+
+    def get_queryset(self):
+        queryset = self.queryset
+        if self.action == "list":
+            return queryset.select_related()
+
+        return queryset
 
 
 class AirportViewSet(
@@ -49,10 +65,11 @@ class AirportViewSet(
 
 class RouteViewSet(
     mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
     mixins.ListModelMixin,
     GenericViewSet,
 ):
-    queryset = Route.objects.all()
+    queryset = Route.objects.all().select_related()
     serializer_class = RouteSerializer
 
 
@@ -70,10 +87,25 @@ class CrewViewSet(
 class FlightViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
     GenericViewSet,
 ):
-    queryset = Flight.objects.all()
-    serializer_class = FlightSerializer
+    queryset = Flight.objects.all().select_related()
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return FlightListSerializer
+        if self.action == 'retrieve':
+            return FlightDetailSerializer
+
+        return FlightSerializer
+
+    def get_queryset(self):
+        queryset = self.queryset
+        if self.action == "list":
+            return queryset.prefetch_related("crew")
+
+        return queryset
 
 
 class OrderViewSet(
