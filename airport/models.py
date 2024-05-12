@@ -51,7 +51,7 @@ class Crew(models.Model):
 
 class Flight(models.Model):
     route = models.ForeignKey(Route, on_delete=models.CASCADE)
-    airplane = models.ForeignKey(Airplane, on_delete=models.CASCADE)
+    airplane = models.ForeignKey(Airplane, on_delete=models.CASCADE, related_name='flights')
     departure_time = models.DateTimeField()
     arrival_time = models.DateTimeField()
     crew = models.ManyToManyField(Crew, related_name='flights')
@@ -74,17 +74,40 @@ class Order(models.Model):
 class Ticket(models.Model):
     row = models.IntegerField()
     seat = models.IntegerField()
-    flight = models.ForeignKey(Flight, on_delete=models.CASCADE)
+    flight = models.ForeignKey(Flight, on_delete=models.CASCADE, related_name="tickets")
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='tickets')
 
     class Meta:
-        constraints = [
-            UniqueConstraint(fields=['seat', 'flight'], name='unique_seat')
-        ]
+        unique_together = ("seat", "flight")
+        ordering = ("seat",)
 
     def __str__(self):
         return f"{self.flight} - {self.seat}"
 
+    @staticmethod
+    def validate_ticket(row, seat, airplane, error_to_raise):
+        if not (1 <= row <= airplane.rows):
+            raise error_to_raise({"row": f"row {row} is out of range"})
+        if not (1 <= seat <= airplane.seats_in_row):
+            raise error_to_raise({"seat": f"seat {seat} is out of range"})
+        if Ticket.objects.filter(row=row, seat=seat, flight__airplane=airplane).exists():
+            raise error_to_raise({"seat": f"seat {seat} is already taken"})
+
     def clean(self):
         if self.flight.airplane.capacity < Ticket.objects.filter(flight=self.flight).count():
             raise ValueError("No available seats")
+
+    def save(
+        self,
+        force_insert=False,
+        force_update=False,
+        using=None,
+        update_fields=None
+    ):
+        self.full_clean()
+        super().save(
+            force_insert=force_insert,
+            force_update=force_update,
+            using=using,
+            update_fields=update_fields
+        )
