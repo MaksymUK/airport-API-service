@@ -1,4 +1,5 @@
-from django.db.models import Count, F
+from django.db.models import Count, F, Q
+from django.utils.dateparse import parse_date
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
@@ -126,9 +127,8 @@ class FlightViewSet(
     GenericViewSet,
 ):
     queryset = Flight.objects.all().select_related()
-    authentication_classes = (TokenAuthentication,)
-    permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
-
+    # authentication_classes = (TokenAuthentication,)
+    # permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     @staticmethod
     def _params_to_ints(query_string):
@@ -153,10 +153,12 @@ class FlightViewSet(
             queryset = queryset.filter(route__id__in=route)
 
         if departure_time:
-            queryset = queryset.filter(departure_time=departure_time)
+            parsed_date = parse_date(departure_time)
+            if parsed_date:
+                queryset = queryset.filter(departure_time__date=parsed_date)
 
         if crew:
-            queryset = queryset.filter(crew__last_name__icontains=crew)
+            queryset = queryset.filter(Q(crew__last_name__icontains=crew) | Q(crew__first_name__icontains=crew))
 
         if self.action == "list":
             queryset = queryset.prefetch_related("airplane").annotate(
