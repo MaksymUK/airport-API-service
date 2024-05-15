@@ -1,7 +1,8 @@
 from django.db.models import Count, F
 from rest_framework import viewsets, mixins, status
+from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 from rest_framework import generics
@@ -14,6 +15,7 @@ from .models import (
     Flight,
     Order,
 )
+from .permissions import IsAdminOrIfAuthenticatedReadOnly
 from .serializers import (
     AirplaneTypeSerializer,
     AirplaneSerializer,
@@ -36,12 +38,16 @@ class AirplaneTypeViewSet(
 ):
     queryset = AirplaneType.objects.all()
     serializer_class = AirplaneTypeSerializer
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
 class AirplaneViewSet(
     viewsets.ModelViewSet
 ):
     queryset = Airplane.objects.all()
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
@@ -84,6 +90,8 @@ class AirportViewSet(
 ):
     queryset = Airport.objects.all()
     serializer_class = AirportSerializer
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
 class RouteViewSet(
@@ -94,6 +102,8 @@ class RouteViewSet(
 ):
     queryset = Route.objects.all().select_related()
     serializer_class = RouteSerializer
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
 class CrewViewSet(
@@ -105,6 +115,8 @@ class CrewViewSet(
 ):
     queryset = Crew.objects.all()
     serializer_class = CrewSerializer
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
 class FlightViewSet(
@@ -114,6 +126,9 @@ class FlightViewSet(
     GenericViewSet,
 ):
     queryset = Flight.objects.all().select_related()
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+
 
     @staticmethod
     def _params_to_ints(query_string):
@@ -158,6 +173,9 @@ class OrderViewSet(
 ):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+
 
     # def get_queryset(self):
     #     return self.queryset.filter(user=self.request.user)
