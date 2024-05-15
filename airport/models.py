@@ -1,6 +1,10 @@
+import pathlib
+import uuid
+
 from django.db import models
 from django.conf import settings
 from django.db.models import UniqueConstraint
+from django.utils.text import slugify
 
 
 class AirplaneType(models.Model):
@@ -10,11 +14,22 @@ class AirplaneType(models.Model):
         return self.name
 
 
+def create_custom_path(instance: "Airplane", filename: str) -> pathlib.Path:
+    filename = (
+        f"{slugify(instance.name)}-{uuid.uuid4()}"
+        + pathlib.Path(filename).suffix
+    )
+    return pathlib.Path("uploads/airplanes/") / pathlib.Path(filename)
+
+
 class Airplane(models.Model):
     name = models.CharField(max_length=255, unique=True)
     rows = models.IntegerField()
     seats_in_row = models.IntegerField()
     airplane_type = models.ForeignKey(AirplaneType, on_delete=models.CASCADE)
+    image = models.ImageField(
+        upload_to=create_custom_path, null=True, blank=True
+    )
 
     @property
     def capacity(self) -> int:
