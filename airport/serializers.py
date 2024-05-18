@@ -48,12 +48,20 @@ class AirportSerializer(serializers.ModelSerializer):
 
 
 class RouteSerializer(serializers.ModelSerializer):
-    source = serializers.SlugRelatedField(
-        read_only=True, slug_field="name"
-    )
-    destination = serializers.SlugRelatedField(
-        read_only=True, slug_field="name"
-    )
+
+    class Meta:
+        model = Route
+        fields = ("id", "source", "destination", "distance",)
+
+
+class RouteDetailSerializer(RouteSerializer):
+    source = AirportSerializer()
+    destination = AirportSerializer()
+
+
+class RouteListSerializer(RouteSerializer):
+    source = serializers.SlugRelatedField(slug_field="name", read_only=True)
+    destination = serializers.SlugRelatedField(slug_field="name", read_only=True)
 
     class Meta:
         model = Route
@@ -127,9 +135,9 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = ("id", "created_at", "tickets",)
-
-    def get_queryset(self):
-        return self.queryset.filter(user=self.request.user)
+    #
+    # def get_queryset(self):
+    #     return self.queryset.filter(user=self.request.user)
 
     def create(self, validated_data):
         with transaction.atomic():
@@ -142,7 +150,3 @@ class OrderSerializer(serializers.ModelSerializer):
 
 class OrderListSerializer(OrderSerializer):
     tickets = TicketListSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = Order
-        fields = ("id", "created_at", "tickets",)

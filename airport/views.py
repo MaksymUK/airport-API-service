@@ -3,6 +3,7 @@ from django.utils.dateparse import parse_date
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
@@ -25,6 +26,8 @@ from .serializers import (
     AirplaneListSerializer,
     AirportSerializer,
     RouteSerializer,
+    RouteDetailSerializer,
+    RouteListSerializer,
     CrewSerializer,
     FlightSerializer,
     FlightListSerializer,
@@ -34,8 +37,14 @@ from .serializers import (
 )
 
 
+class OrderPagination(PageNumberPagination):
+    page_size = 3
+    page_size_query_param = "page_size"
+    max_page_size = 100
+
+
 class AirplaneTypeViewSet(
-    viewsets.ModelViewSet
+    mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet
 ):
     queryset = AirplaneType.objects.all()
     serializer_class = AirplaneTypeSerializer
@@ -44,7 +53,7 @@ class AirplaneTypeViewSet(
 
 
 class AirplaneViewSet(
-    viewsets.ModelViewSet
+    mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet
 ):
     queryset = Airplane.objects.all()
     authentication_classes = (TokenAuthentication,)
@@ -85,9 +94,7 @@ class AirplaneViewSet(
 
 
 class AirportViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    GenericViewSet,
+    mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet
 ):
     queryset = Airport.objects.all()
     serializer_class = AirportSerializer
@@ -95,24 +102,26 @@ class AirportViewSet(
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
-class RouteViewSet(
-    mixins.CreateModelMixin,
-    mixins.RetrieveModelMixin,
-    mixins.ListModelMixin,
-    GenericViewSet,
-):
-    queryset = Route.objects.all().select_related()
+class RouteViewSet(viewsets.ModelViewSet):
+    queryset = Route.objects.all().select_related("source", "destination")
     serializer_class = RouteSerializer
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
+    def get_serializer_class(self):
+        if self.action == "list":
+            return RouteListSerializer
+        if self.action == "retrieve":
+            return RouteDetailSerializer
+
+        return RouteSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('source', 'destination')
+
 
 class CrewViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    mixins.RetrieveModelMixin,
-    mixins.UpdateModelMixin,
-    GenericViewSet,
+    mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet
 ):
     queryset = Crew.objects.all()
     serializer_class = CrewSerializer
@@ -127,8 +136,9 @@ class FlightViewSet(
     GenericViewSet,
 ):
     queryset = Flight.objects.all().select_related()
-    # authentication_classes = (TokenAuthentication,)
-    # permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+    pagination_class = OrderPagination
 
     @staticmethod
     def _params_to_ints(query_string):
@@ -171,22 +181,35 @@ class FlightViewSet(
 class OrderViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
-    GenericViewSet,
+    viewsets.GenericViewSet,
 ):
-    queryset = Order.objects.all()
+    queryset = Order.objects.prefetch_related(
+        "tickets__flight__route", "tickets__flight__airplane",
+    )
     serializer_class = OrderSerializer
     authentication_classes = (TokenAuthentication,)
-    permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+    permission_classes = (IsAuthenticated,)
+    pagination_class = OrderPagination
 
+    def get_permissions(self):
+        if self.action in ("create", "list"):
+            return (IsAuthenticated(),)
 
-    # def get_queryset(self):
-    #     return self.queryset.filter(user=self.request.user)
-    #
-    # def perform_create(self, serializer):
-    #     serializer.save(user=self.request.user)
-    #
-    # def get_serializer_class(self):
-    #     serializer = self.serializer_class
-    #     if self.action == "list":
-    #         serializer = OrderListSerializer
-    #     return serializer
+        return super().get_permissions()
+
+    def get_queryset(self):
+        queryset = self.queryset.filter(user=self.request.user)
+
+        if self.action == "list":
+            return self.queryset.prefetch_related("tickets__flight__route", "tickets__flight__airplane")
+
+        return queryset
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    def get_serializer_class(self):
+        serializer = self.serializer_class
+        if self.action == "list":
+            serializer = OrderListSerializer
+        return serializer
