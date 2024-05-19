@@ -7,7 +7,8 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
-from rest_framework import generics
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+
 from .models import (
     Airplane,
     AirplaneType,
@@ -48,15 +49,13 @@ class AirplaneTypeViewSet(
 ):
     queryset = AirplaneType.objects.all()
     serializer_class = AirplaneTypeSerializer
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
 class AirplaneViewSet(
-    mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet
+    mixins.ListModelMixin, mixins.CreateModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet
 ):
     queryset = Airplane.objects.all()
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     def get_serializer_class(self):
@@ -98,14 +97,12 @@ class AirportViewSet(
 ):
     queryset = Airport.objects.all()
     serializer_class = AirportSerializer
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
 class RouteViewSet(viewsets.ModelViewSet):
     queryset = Route.objects.all().select_related("source", "destination")
     serializer_class = RouteSerializer
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     def get_serializer_class(self):
@@ -125,7 +122,6 @@ class CrewViewSet(
 ):
     queryset = Crew.objects.all()
     serializer_class = CrewSerializer
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
@@ -136,7 +132,6 @@ class FlightViewSet(
     GenericViewSet,
 ):
     queryset = Flight.objects.all().select_related()
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
     pagination_class = OrderPagination
 
@@ -177,6 +172,32 @@ class FlightViewSet(
 
         return queryset.distinct()
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="route",
+                description="Filter by route IDs (e.g. ?route=2,3)",
+                required=False,
+                type={"type": "array", "items": {"type": "number"}},
+            ),
+            OpenApiParameter(
+                name="departure_time",
+                description="Filter by departure date (e.g. ?departure_date=2022-01-01)",
+                required=False,
+                type={"type": "string", "format": "date"},
+            ),
+            OpenApiParameter(
+                name="crew",
+                description="Filter by crew members name or surname (e.g. ?crew=John)",
+                required=False,
+                type={"type": "string"},
+            ),
+        ],
+    )
+    def list(self, request, *args, **kwargs):
+        """return list of movies with optional filters"""
+        return super().list(request, *args, **kwargs)
+
 
 class OrderViewSet(
     mixins.CreateModelMixin,
@@ -187,7 +208,6 @@ class OrderViewSet(
         "tickets__flight__route", "tickets__flight__airplane",
     )
     serializer_class = OrderSerializer
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
     pagination_class = OrderPagination
 
