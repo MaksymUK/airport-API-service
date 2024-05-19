@@ -7,7 +7,8 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
-from rest_framework import generics
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+
 from .models import (
     Airplane,
     AirplaneType,
@@ -176,6 +177,32 @@ class FlightViewSet(
             )
 
         return queryset.distinct()
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="route",
+                description="Filter by route IDs (e.g. ?route=2,3)",
+                required=False,
+                type={"type": "array", "items": {"type": "number"}},
+            ),
+            OpenApiParameter(
+                name="departure_time",
+                description="Filter by departure date (e.g. ?departure_date=2022-01-01)",
+                required=False,
+                type={"type": "string", "format": "date"},
+            ),
+            OpenApiParameter(
+                name="crew",
+                description="Filter by crew members name or surname (e.g. ?crew=John)",
+                required=False,
+                type={"type": "string"},
+            ),
+        ],
+    )
+    def list(self, request, *args, **kwargs):
+        """return list of movies with optional filters"""
+        return super().list(request, *args, **kwargs)
 
 
 class OrderViewSet(
