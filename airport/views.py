@@ -199,10 +199,6 @@ class OrderViewSet(
 
     def get_queryset(self):
         queryset = self.queryset.filter(user=self.request.user)
-
-        if self.action == "list":
-            return self.queryset.prefetch_related("tickets__flight__route", "tickets__flight__airplane")
-
         return queryset
 
     def perform_create(self, serializer):

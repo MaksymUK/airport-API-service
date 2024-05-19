@@ -82,7 +82,7 @@ class FlightSerializer(serializers.ModelSerializer):
 
 
 class FlightDetailSerializer(FlightSerializer):
-    route = RouteSerializer()
+    route = RouteListSerializer()
     airplane = AirplaneListSerializer()
     taken_seats = serializers.SlugRelatedField(many=True, read_only=True, slug_field="seat", source="tickets")
     crew = serializers.StringRelatedField(many=True)
@@ -107,7 +107,7 @@ class FlightListSerializer(FlightSerializer):
 class TicketSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ticket
-        fields = ("id", "flight", "seat",)
+        fields = ("id", "flight", "row", "seat",)
 
     def validate(self, attrs):
         data = super(TicketSerializer, self).validate(attrs=attrs)
@@ -121,12 +121,13 @@ class TicketSerializer(serializers.ModelSerializer):
 
 
 class TicketListSerializer(TicketSerializer):
-    flight = FlightSerializer()
+    flight = serializers.IntegerField(source="flight.id", read_only=True)
+    route = serializers.CharField(source="flight.route", read_only=True)
     order = serializers.StringRelatedField()
 
     class Meta:
         model = Ticket
-        fields = ("id", "flight", "seat", "order",)
+        fields = ("id", "flight", "route", "row", "seat", "order",)
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -135,9 +136,6 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = ("id", "created_at", "tickets",)
-    #
-    # def get_queryset(self):
-    #     return self.queryset.filter(user=self.request.user)
 
     def create(self, validated_data):
         with transaction.atomic():

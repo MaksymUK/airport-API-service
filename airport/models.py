@@ -103,9 +103,9 @@ class Ticket(models.Model):
     def validate_ticket(row, seat, airplane, error_to_raise):
         if not (1 <= row <= airplane.rows):
             raise error_to_raise({"row": f"row {row} is out of range"})
-        if not (1 <= seat <= airplane.seats_in_row):
+        if not (1 <= seat <= airplane.capacity):
             raise error_to_raise({"seat": f"seat {seat} is out of range"})
-        if Ticket.objects.filter(row=row, seat=seat, flight__airplane=airplane).exists():
+        if Ticket.objects.filter(seat=seat, flight__airplane=airplane).exists():
             raise error_to_raise({"seat": f"seat {seat} is already taken"})
 
     def clean(self):
