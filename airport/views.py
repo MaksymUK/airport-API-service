@@ -53,17 +53,20 @@ class AirplaneTypeViewSet(
 
 
 class AirplaneViewSet(
-    mixins.ListModelMixin, mixins.CreateModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.UpdateModelMixin,
+    viewsets.GenericViewSet,
 ):
     queryset = Airplane.objects.all()
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     def get_serializer_class(self):
-        if self.action == 'retrieve':
+        if self.action == "retrieve":
             return AirplaneDetailSerializer
-        if self.action == 'list':
+        if self.action == "list":
             return AirplaneListSerializer
-        if self.action == 'upload_image':
+        if self.action == "upload_image":
             return AirplaneImageSerializer
 
         return AirplaneSerializer
@@ -114,7 +117,7 @@ class RouteViewSet(viewsets.ModelViewSet):
         return RouteSerializer
 
     def get_queryset(self):
-        return super().get_queryset().select_related('source', 'destination')
+        return super().get_queryset().select_related("source", "destination")
 
 
 class CrewViewSet(
@@ -140,9 +143,9 @@ class FlightViewSet(
         return [int(str_id) for str_id in query_string.split(",")]
 
     def get_serializer_class(self):
-        if self.action == 'list':
+        if self.action == "list":
             return FlightListSerializer
-        if self.action == 'retrieve':
+        if self.action == "retrieve":
             return FlightDetailSerializer
 
         return FlightSerializer
@@ -163,11 +166,14 @@ class FlightViewSet(
                 queryset = queryset.filter(departure_time__date=parsed_date)
 
         if crew:
-            queryset = queryset.filter(Q(crew__last_name__icontains=crew) | Q(crew__first_name__icontains=crew))
+            queryset = queryset.filter(
+                Q(crew__last_name__icontains=crew) | Q(crew__first_name__icontains=crew)
+            )
 
         if self.action == "list":
             queryset = queryset.prefetch_related("airplane").annotate(
-                remaining_seats=F("airplane__rows") * F("airplane__seats_in_row") - Count("tickets"),
+                remaining_seats=F("airplane__rows") * F("airplane__seats_in_row")
+                - Count("tickets"),
             )
 
         return queryset.distinct()
@@ -205,7 +211,8 @@ class OrderViewSet(
     viewsets.GenericViewSet,
 ):
     queryset = Order.objects.prefetch_related(
-        "tickets__flight__route", "tickets__flight__airplane",
+        "tickets__flight__route",
+        "tickets__flight__airplane",
     )
     serializer_class = OrderSerializer
     permission_classes = (IsAuthenticated,)

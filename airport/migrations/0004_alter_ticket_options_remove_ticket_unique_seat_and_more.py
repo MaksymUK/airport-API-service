@@ -7,35 +7,47 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('airport', '0003_alter_flight_crew_ticket_unique_seat'),
+        ("airport", "0003_alter_flight_crew_ticket_unique_seat"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='ticket',
-            options={'ordering': ('seat',)},
+            name="ticket",
+            options={"ordering": ("seat",)},
         ),
         migrations.RemoveConstraint(
-            model_name='ticket',
-            name='unique_seat',
+            model_name="ticket",
+            name="unique_seat",
         ),
         migrations.AlterField(
-            model_name='flight',
-            name='airplane',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='flights', to='airport.airplane'),
+            model_name="flight",
+            name="airplane",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="flights",
+                to="airport.airplane",
+            ),
         ),
         migrations.AlterField(
-            model_name='ticket',
-            name='flight',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='tickets', to='airport.flight'),
+            model_name="ticket",
+            name="flight",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="tickets",
+                to="airport.flight",
+            ),
         ),
         migrations.AlterField(
-            model_name='ticket',
-            name='order',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='tickets', to='airport.order'),
+            model_name="ticket",
+            name="order",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="tickets",
+                to="airport.order",
+            ),
         ),
         migrations.AlterUniqueTogether(
-            name='ticket',
-            unique_together={('seat', 'flight')},
+            name="ticket",
+            unique_together={("seat", "flight")},
         ),
     ]

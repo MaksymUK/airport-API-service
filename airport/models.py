@@ -48,8 +48,12 @@ class Airport(models.Model):
 
 
 class Route(models.Model):
-    source = models.ForeignKey(Airport, on_delete=models.CASCADE, related_name='departure_airport')
-    destination = models.ForeignKey(Airport, on_delete=models.CASCADE, related_name='arrival_airport')
+    source = models.ForeignKey(
+        Airport, on_delete=models.CASCADE, related_name="departure_airport"
+    )
+    destination = models.ForeignKey(
+        Airport, on_delete=models.CASCADE, related_name="arrival_airport"
+    )
     distance = models.IntegerField()
 
     def __str__(self):
@@ -66,10 +70,12 @@ class Crew(models.Model):
 
 class Flight(models.Model):
     route = models.ForeignKey(Route, on_delete=models.CASCADE)
-    airplane = models.ForeignKey(Airplane, on_delete=models.CASCADE, related_name='flights')
+    airplane = models.ForeignKey(
+        Airplane, on_delete=models.CASCADE, related_name="flights"
+    )
     departure_time = models.DateTimeField()
     arrival_time = models.DateTimeField()
-    crew = models.ManyToManyField(Crew, related_name='flights')
+    crew = models.ManyToManyField(Crew, related_name="flights")
 
     def __str__(self):
         return f"{self.airplane} - {self.route}"
@@ -77,7 +83,9 @@ class Flight(models.Model):
 
 class Order(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE
+    )
 
     def __str__(self):
         return self.created_at.strftime("%Y-%m-%d %H:%M:%S")
@@ -89,8 +97,12 @@ class Order(models.Model):
 class Ticket(models.Model):
     row = models.IntegerField()
     seat = models.IntegerField()
-    flight = models.ForeignKey(Flight, on_delete=models.CASCADE, related_name="tickets")
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='tickets')
+    flight = models.ForeignKey(
+        Flight, on_delete=models.CASCADE, related_name="tickets"
+    )
+    order = models.ForeignKey(
+        Order, on_delete=models.CASCADE, related_name="tickets"
+    )
 
     class Meta:
         unique_together = ("seat", "flight")
@@ -105,11 +117,16 @@ class Ticket(models.Model):
             raise error_to_raise({"row": f"row {row} is out of range"})
         if not (1 <= seat <= airplane.capacity):
             raise error_to_raise({"seat": f"seat {seat} is out of range"})
-        if Ticket.objects.filter(seat=seat, flight__airplane=airplane).exists():
+        if Ticket.objects.filter(
+            seat=seat, flight__airplane=airplane
+        ).exists():
             raise error_to_raise({"seat": f"seat {seat} is already taken"})
 
     def clean(self):
-        if self.flight.airplane.capacity < Ticket.objects.filter(flight=self.flight).count():
+        if (
+            self.flight.airplane.capacity
+            < Ticket.objects.filter(flight=self.flight).count()
+        ):
             raise ValueError("No available seats")
 
     def save(
@@ -117,12 +134,12 @@ class Ticket(models.Model):
         force_insert=False,
         force_update=False,
         using=None,
-        update_fields=None
+        update_fields=None,
     ):
         self.full_clean()
         super().save(
             force_insert=force_insert,
             force_update=force_update,
             using=using,
-            update_fields=update_fields
+            update_fields=update_fields,
         )
