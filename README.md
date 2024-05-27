@@ -42,3 +42,12 @@ docker-compose up
 ## Getting access
 - create user via /api/v1/user/register/
 - get access token via /api/v1/user/token/
+
+## Features
+- JWT authentication
+- Admin panel /admin/
+- Documentation is located at /api/v1/doc/schema/swagger/
+- Creation of Orders and Tickets for authenticated users
+- Creation of Flights, Airplanes, Crews, Airports for admin user
+- Filtering of Flights by route, departure date and crew names
+- Managing images for Airplanes by admin user
