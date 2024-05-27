@@ -1,2 +1,8 @@
 venv
 .idea
+db.sqlite3
+media
+__pycache__/
+.pytest_cache/
+.DS_Store
+.env

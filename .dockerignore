@@ -1,0 +1,4 @@
+.gitignore
+.env
+db.sqlite3
+venv
